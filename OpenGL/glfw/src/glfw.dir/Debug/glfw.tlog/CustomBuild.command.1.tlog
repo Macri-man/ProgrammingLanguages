@@ -1,0 +1,10 @@
+^E:\YOUTUBEPROJECTS\GAMEENGINES\GAMEENGINEC++\GLFW\SRC\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SE:/YoutubeProjects/GameEngines/GameEngineC++ -BE:/YoutubeProjects/GameEngines/GameEngineC++/build --check-stamp-file E:/YoutubeProjects/GameEngines/GameEngineC++/build/glfw/src/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

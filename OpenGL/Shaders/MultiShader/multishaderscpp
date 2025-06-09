@@ -1,0 +1,120 @@
+// Vertex shader source for basic rendering
+const char* vertexShaderSourceBasic = R"(
+#version 330 core
+layout(location = 0) in vec3 aPos;
+out vec3 FragPos;
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
+void main()
+{
+    FragPos = vec3(model * vec4(aPos, 1.0));
+    gl_Position = projection * view * vec4(FragPos, 1.0);
+}
+)";
+
+// Fragment shader source for basic rendering
+const char* fragmentShaderSourceBasic = R"(
+#version 330 core
+in vec3 FragPos;
+out vec4 FragColor;
+uniform vec3 objectColor;
+void main()
+{
+    FragColor = vec4(objectColor, 1.0);
+}
+)";
+
+// Vertex shader source for post-processing
+const char* vertexShaderSourcePostProcessing = R"(
+#version 330 core
+layout(location = 0) in vec2 aPos;
+layout(location = 1) in vec2 aTexCoord;
+out vec2 TexCoord;
+void main()
+{
+    gl_Position = vec4(aPos, 0.0, 1.0);
+    TexCoord = aTexCoord;
+}
+)";
+
+// Fragment shader source for post-processing
+const char* fragmentShaderSourcePostProcessing = R"(
+#version 330 core
+in vec2 TexCoord;
+out vec4 FragColor;
+uniform sampler2D screenTexture;
+void main()
+{
+    FragColor = texture(screenTexture, TexCoord);
+}
+)";
+
+GLuint compileShader(GLenum type, const char* source) {
+    GLuint shader = glCreateShader(type);
+    glShaderSource(shader, 1, &source, nullptr);
+    glCompileShader(shader);
+    
+    // Check for compilation errors
+    GLint success;
+    GLchar infoLog[512];
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(shader, 512, nullptr, infoLog);
+        std::cerr << "Shader Compilation Error: " << infoLog << std::endl;
+    }
+    
+    return shader;
+}
+
+GLuint createShaderProgram(GLuint vertexShader, GLuint fragmentShader) {
+    GLuint shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+    
+    // Check for linking errors
+    GLint success;
+    GLchar infoLog[512];
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(shaderProgram, 512, nullptr, infoLog);
+        std::cerr << "Program Linking Error: " << infoLog << std::endl;
+    }
+    
+    return shaderProgram;
+}
+
+int main()
+{
+    // Initialize GLFW and create a window (not shown)
+
+    // Load OpenGL functions with GLAD (not shown)
+
+    // Compile and link shaders
+    GLuint vertexShaderBasic = compileShader(GL_VERTEX_SHADER, vertexShaderSourceBasic);
+    GLuint fragmentShaderBasic = compileShader(GL_FRAGMENT_SHADER, fragmentShaderSourceBasic);
+    GLuint shaderProgramBasic = createShaderProgram(vertexShaderBasic, fragmentShaderBasic);
+
+    GLuint vertexShaderPostProcessing = compileShader(GL_VERTEX_SHADER, vertexShaderSourcePostProcessing);
+    GLuint fragmentShaderPostProcessing = compileShader(GL_FRAGMENT_SHADER, fragmentShaderSourcePostProcessing);
+    GLuint shaderProgramPostProcessing = createShaderProgram(vertexShaderPostProcessing, fragmentShaderPostProcessing);
+
+    // Setup rendering (e.g., create VAOs, VBOs, etc.)
+
+    // Render loop
+    while (!glfwWindowShouldClose(window)) {
+        // First pass: Render scene with basic shader
+        glUseProgram(shaderProgramBasic);
+        // Bind VAO, set uniforms, draw objects
+
+        // Second pass: Render post-processing effects
+        glUseProgram(shaderProgramPostProcessing);
+        // Bind post-processing framebuffer, set uniforms, draw screen quad
+
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+
+    // Clean up (not shown)
+}

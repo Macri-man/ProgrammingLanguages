@@ -1,0 +1,1 @@
+print_parents :- parent(X, Y), write(X), write(' is the parent of '), write(Y), nl, fail.

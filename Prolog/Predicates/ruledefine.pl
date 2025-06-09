@@ -1,0 +1,1 @@
+sibling(X, Y) :- parent(P, X), parent(P, Y), X \= Y.

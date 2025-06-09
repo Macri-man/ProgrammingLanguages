@@ -1,0 +1,1 @@
+location(office, buildingA, cityX).

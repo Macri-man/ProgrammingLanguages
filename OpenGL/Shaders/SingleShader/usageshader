@@ -1,0 +1,10 @@
+// Example setup
+const char* vertexShaderSource = "vertex shader source here";
+const char* fragmentShaderSource = "fragment shader source here";
+
+GLuint vertexShader = compileShader(GL_VERTEX_SHADER, vertexShaderSource);
+GLuint fragmentShader = compileShader(GL_FRAGMENT_SHADER, fragmentShaderSource);
+
+GLuint shaderProgram = createShaderProgram(vertexShader, fragmentShader);
+
+glUseProgram(shaderProgram); // Use the shader program

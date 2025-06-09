@@ -1,0 +1,13 @@
+x86 Assembly: Used for Intel and AMD processors. It's one of the most common types of assembly language and includes different modes like real mode, protected mode, and long mode (for 64-bit).
+
+ARM Assembly: Used for ARM processors, common in mobile devices and embedded systems. ARM assembly supports both 32-bit (ARM) and 64-bit (AArch64) architectures.
+
+MIPS Assembly: Used for MIPS processors, often found in academic settings and some embedded systems. MIPS has a relatively simple and clean instruction set.
+
+PowerPC Assembly: Used for PowerPC processors, which were used in older Macintosh computers and some game consoles.
+
+RISC-V Assembly: A newer open-source assembly language for the RISC-V architecture, which is gaining popularity in academia and industry.
+
+6502 Assembly: Used for the 6502 microprocessor, which powered many early home computers and gaming consoles.
+
+Z80 Assembly: Used for the Zilog Z80 microprocessor, which was popular in early personal computers and game consoles.

@@ -1,0 +1,245 @@
+# ============================
+# Common OS/system files
+# ============================
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.swp
+*.swo
+
+# ============================
+# Editors/IDEs
+# ============================
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# ============================
+# Logs & temp
+# ============================
+*.log
+*.tmp
+*.bak
+*.backup
+
+# ============================
+# Node.js / JavaScript / TypeScript
+# ============================
+node_modules/
+dist/
+out/
+.nyc_output/
+coverage/
+*.tsbuildinfo
+
+# ============================
+# Python
+# ============================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+.env
+.venv/
+venv/
+
+# ============================
+# Java
+# ============================
+*.class
+*.jar
+*.war
+*.ear
+*.iml
+target/
+bin/
+.gradle/
+build/
+
+# ============================
+# C / C++
+# ============================
+*.out
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
+build/
+cmake-build-*/
+
+# ============================
+# Go
+# ============================
+*.exe
+*.test
+*.out
+/go.sum
+/go.mod
+/vendor/
+/bin/
+/obj/
+
+# ============================
+# Rust
+# ============================
+/target/
+**/*.rs.bk
+Cargo.lock
+
+# ============================
+# C#
+# ============================
+*.dll
+*.exe
+*.pdb
+*.mdb
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.vs/
+obj/
+bin/
+
+# ============================
+# Swift / iOS / Xcode
+# ============================
+build/
+DerivedData/
+*.xcuserstate
+*.xcworkspace
+Pods/
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+
+# ============================
+# Dart / Flutter
+# ============================
+.dart_tool/
+.packages
+.pub/
+build/
+.flutter-plugins
+flutter_export_environment.sh
+
+# ============================
+# Ruby
+# ============================
+*.gem
+*.rbc
+.bundle/
+log/
+tmp/
+vendor/
+coverage/
+spec/reports/
+test/tmp/
+test/version_tmp/
+.env
+
+# ============================
+# PHP / Laravel
+# ============================
+vendor/
+.env
+.env.*
+storage/*.key
+/public/storage
+/storage/logs
+/storage/framework/cache
+/storage/framework/sessions
+/storage/framework/views
+
+# ============================
+# Miscellaneous
+# ============================
+*.sqlite3
+*.db
+*.lock
+*.pid
+*.cache
+*.log
+*.orig
+
+
+# ============================
+# WebGL (typically JavaScript + GLSL shaders)
+# ============================
+# Compiled/bundled JS output
+/dist/
+/build/
+/node_modules/
+
+# Shader cache or compiled shader binaries (if any)
+*.spv
+*.bin
+
+# ============================
+# OpenGL and Vulkan (C/C++ graphics projects)
+# ============================
+
+# Object files and binaries
+*.o
+*.obj
+*.out
+*.exe
+*.dll
+*.so
+*.dylib
+*.lib
+*.a
+
+# Build directories (commonly used)
+build/
+cmake-build-*/
+bin/
+obj/
+lib/
+
+# CMake files and caches
+CMakeFiles/
+CMakeCache.txt
+Makefile
+cmake_install.cmake
+
+# Vulkan SPIR-V binaries (compiled shader binaries)
+*.spv
+
+# Vulkan validation layer logs or temporary files
+*.log
+
+# Shader intermediate and compiled binaries
+*.glsl
+*.vert
+*.frag
+*.geom
+*.tesc
+*.tese
+*.comp
+*.spv
+
+# IDE/project specific (VS, CLion, etc.)
+.vscode/
+.idea/
+*.vcxproj*
+*.sln
+*.user
+*.userosscache
+*.suo
+*.ipch/
+*.pch
+
+# MacOS specific files
+.DS_Store
+

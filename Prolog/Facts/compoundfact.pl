@@ -1,0 +1,1 @@
+owns(car(john, honda), house(john, red)).

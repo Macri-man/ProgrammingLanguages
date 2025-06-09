@@ -1,0 +1,17 @@
+GLuint createShaderProgram(GLuint vertexShader, GLuint fragmentShader) {
+    GLuint shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+    
+    // Check for linking errors
+    GLint success;
+    GLchar infoLog[512];
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(shaderProgram, 512, nullptr, infoLog);
+        std::cerr << "Program Linking Error: " << infoLog << std::endl;
+    }
+    
+    return shaderProgram;
+}
