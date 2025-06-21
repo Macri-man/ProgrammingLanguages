@@ -1,0 +1,19 @@
+Use test or [ ] with operators:
+
+Operator	Description	Example
+-eq	equal (integers)	[ $a -eq $b ]
+-ne	not equal	[ $a -ne $b ]
+-gt	greater than	[ $a -gt $b ]
+-ge	greater or equal	[ $a -ge $b ]
+-lt	less than	[ $a -lt $b ]
+-le	less or equal	[ $a -le $b ]
+=	string equality	[ "$a" = "$b" ]
+!=	string inequality	[ "$a" != "$b" ]
+-z	string is empty	[ -z "$str" ]
+-n	string is not empty	[ -n "$str" ]
+-e	file exists	[ -e filename ]
+-f	file is regular file	[ -f filename ]
+-d	directory exists	[ -d directoryname ]
+-r	readable file	[ -r filename ]
+-w	writable file	[ -w filename ]
+-x	executable file	[ -x filename ]

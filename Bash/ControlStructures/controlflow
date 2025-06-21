@@ -1,0 +1,10 @@
+Control Structure	Purpose	Syntax Example
+if	Conditional branching	if [ cond ]; then ... fi
+case	Multi-way branching	case var in pattern) ... esac
+for	Iterate over list	for var in list; do ... done
+C-style for	Counting loop	for ((i=0; i<5; i++)); do ...
+while	Loop while condition true	while [ cond ]; do ... done
+until	Loop until condition true	until [ cond ]; do ... done
+break	Exit loop early	break
+continue	Skip iteration	continue
+Functions	Encapsulate commands	function name { ... }

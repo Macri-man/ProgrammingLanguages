@@ -1,0 +1,10 @@
+Feature	Description	Example
+Define function	name() { commands; } or function name {}	greet() { echo "Hi"; }
+Call function	name [args]	greet Alice
+Positional arguments	$1, $2, ..., $@, $#	echo $1
+Return exit status	return n (0=success)	return 0
+Return output	Use echo and capture with $(func)	result=$(add 1 2)
+Local variables	local var=value	local x=5
+Export functions	export -f name	export -f greet
+Recursive functions	Functions that call themselves	factorial()
+Check existence	declare -f funcname	declare -f greet
