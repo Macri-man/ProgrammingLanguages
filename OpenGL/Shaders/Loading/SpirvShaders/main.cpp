@@ -1,22 +1,39 @@
-#include <glad/glad.h>
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <fstream>
 #include <iostream>
 #include <vector>
 
 std::vector<uint32_t> LoadSPIRV(const char* path) {
-    std::ifstream file(path, std::ios::binary);
+    std::ifstream file(path, std::ios::binary | std::ios::ate);
     if (!file) {
         std::cerr << "Failed to open SPIR-V file: " << path << '\n';
         return {};
     }
-    return std::vector<uint32_t>((std::istreambuf_iterator<char>(file)),
-                                  std::istreambuf_iterator<char>());
+
+    std::streamsize size = file.tellg();
+    if (size % 4 != 0) {
+        std::cerr << "SPIR-V file size is not 4-byte aligned: " << size << " bytes\n";
+        return {};
+    }
+
+    file.seekg(0, std::ios::beg);
+    std::vector<uint32_t> spirv(size / 4);
+    if (!file.read(reinterpret_cast<char*>(spirv.data()), size)) {
+        std::cerr << "Failed to read SPIR-V binary data from file: " << path << '\n';
+        return {};
+    }
+
+    return spirv;
 }
+
 
 GLuint CreateShaderFromSPIRV(const char* path, GLenum type) {
     auto spirvBytes = LoadSPIRV(path);
-    if (spirvBytes.empty()) return 0;
+    if (spirvBytes.empty()) {
+        std::cerr << "Failed to read SPIR-V data from: " << path << "\n";
+        return 0;
+    }
 
     GLuint shader = glCreateShader(type);
     glShaderBinary(1, &shader, GL_SHADER_BINARY_FORMAT_SPIR_V, spirvBytes.data(), spirvBytes.size() * sizeof(uint32_t));
@@ -70,7 +87,7 @@ int main() {
     GLFWwindow* window = glfwCreateWindow(800, 600, "SPIR-V Shader Example", nullptr, nullptr);
     if (!window) return -1;
     glfwMakeContextCurrent(window);
-    if (!gladLoadGL()) return -1;
+    if (!gladLoadGL(glfwGetProcAddress)) { std::cerr << "Failed to initialize GLAD\n"; return -1; }
 
     GLuint shaderProgram = CreateProgramFromSPIRV("shaders/vertex.spv", "shaders/fragment.spv");
 

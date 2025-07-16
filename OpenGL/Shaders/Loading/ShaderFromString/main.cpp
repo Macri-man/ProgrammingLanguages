@@ -1,4 +1,4 @@
-#include <glad/glad.h>
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
 
@@ -85,10 +85,7 @@ int main() {
     glfwMakeContextCurrent(window);
 
     // Load OpenGL functions
-    if (!gladLoadGL()) {
-        std::cerr << "Failed to initialize GLAD\n";
-        return -1;
-    }
+    if (!gladLoadGL(glfwGetProcAddress)) { std::cerr << "Failed to initialize GLAD\n"; return -1; }
 
     GLuint shaderProgram = CreateShaderProgram(vertexShaderSource, fragmentShaderSource);
 

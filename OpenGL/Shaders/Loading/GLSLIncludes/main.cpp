@@ -1,4 +1,4 @@
-#include <glad/glad.h>
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <chrono>
 
@@ -106,7 +106,7 @@ int main() {
     GLFWwindow* window = glfwCreateWindow(800, 600, "GLSL #include Simulation", nullptr, nullptr);
     glfwMakeContextCurrent(window);
 
-    gladLoadGL();
+    if (!gladLoadGL(glfwGetProcAddress)) { std::cerr << "Failed to initialize GLAD\n"; return -1; }
 
     GLuint program = CreateShaderProgram("shaders/vertex.glsl", "shaders/fragment.glsl");
     GLuint VAO, VBO;
