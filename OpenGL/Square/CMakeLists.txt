@@ -1,15 +1,23 @@
 cmake_minimum_required(VERSION 3.15)
-project(OpenGLTriangle)
+project(OpenGLSquare)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 find_package(OpenGL REQUIRED)
 
-# GLFW
 add_subdirectory(../glfw ${CMAKE_BINARY_DIR}/glfw)
 
-# Executable
-add_executable(OpenGLTriangle main.cpp ../glad/src/glad.c)
+# Create executable
+add_executable(OpenGLSquare main.cpp ../glad/src/glad.c)
 
-target_link_libraries(OpenGLTriangle PRIVATE glfw ${OpenGL_LIBRARIES})
-target_include_directories(OpenGLTriangle PRIVATE ../glad/include ../glfw/include)
+# Include directories
+target_include_directories(OpenGLSquare PRIVATE 
+    glad/include 
+    glfw/include
+)
+
+# Link everything
+target_link_libraries(OpenGLSquare PRIVATE 
+    glfw 
+    ${OPENGL_LIBRARIES}
+)
