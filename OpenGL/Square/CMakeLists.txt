@@ -3,21 +3,35 @@ project(OpenGLSquare)
 
 set(CMAKE_CXX_STANDARD 20)
 
+# Required for FetchContent
+include(FetchContent)
+
+# === GLAD ===
+FetchContent_Declare(
+	glad
+	GIT_REPOSITORY https://github.com/Dav1dde/glad.git
+	GIT_TAG v2.0.8
+  GIT_SHALLOW TRUE
+  SOURCE_SUBDIR cmake
+)
+FetchContent_MakeAvailable(glad)
+
+glad_add_library(glad STATIC API gl:core=4.6 LOCATION ${PROJECT_SOURCE_DIR}/vendor/glad-build/${TARGET})
+
+# === GLFW ===
+FetchContent_Declare(
+    glfw
+    GIT_REPOSITORY https://github.com/glfw/glfw.git
+    GIT_TAG 3.3.8
+    GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(glfw)
+
+# === OpenGL ===
 find_package(OpenGL REQUIRED)
 
-add_subdirectory(../glfw ${CMAKE_BINARY_DIR}/glfw)
+# === Executable ===
+add_executable(OpenGLSquare main.cpp)
 
-# Create executable
-add_executable(OpenGLSquare main.cpp ../glad/src/glad.c)
-
-# Include directories
-target_include_directories(OpenGLSquare PRIVATE 
-    glad/include 
-    glfw/include
-)
-
-# Link everything
-target_link_libraries(OpenGLSquare PRIVATE 
-    glfw 
-    ${OPENGL_LIBRARIES}
-)
+# === Include and Link ===
+target_link_libraries(OpenGLSquare PRIVATE glad glfw OpenGL::GL)
