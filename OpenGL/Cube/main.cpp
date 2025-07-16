@@ -1,4 +1,4 @@
-#include <glad/glad.h>
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
 #include <glm/glm.hpp>
@@ -18,8 +18,7 @@ uniform mat4 projection;
 
 void main() {
     gl_Position = projection * view * model * vec4(aPos, 1.0);
-}
-)";
+})";
 
 const char* fragmentShaderSource = R"(
 #version 330 core
@@ -55,28 +54,25 @@ GLuint compileShader(GLenum type, const char* src) {
     return shader;
 }
 
-unsigned int createShaderProgram(const char* vertexPath, const char* fragmentPath) {
-    std::string vertexCode = loadShaderSource(vertexPath);
-    std::string fragmentCode = loadShaderSource(fragmentPath);
-
-    // build shader program
-    GLuint vs = compileShader(GL_VERTEX_SHADER,   vertexShaderSource);
+unsigned int createShaderProgram() {
+    GLuint vs = compileShader(GL_VERTEX_SHADER, vertexShaderSource);
     GLuint fs = compileShader(GL_FRAGMENT_SHADER, fragmentShaderSource);
     GLuint program = glCreateProgram();
-    glAttachShader(program, vs); glAttachShader(program, fs);
+    glAttachShader(program, vs);
+    glAttachShader(program, fs);
     glLinkProgram(program);
-    glDeleteShader(vs); glDeleteShader(fs);
 
-    int success;
-    char log[512];
+    GLint success;
     glGetProgramiv(program, GL_LINK_STATUS, &success);
     if (!success) {
-        glGetProgramInfoLog(program, 512, nullptr, log);
-        std::cerr << "Shader Link Error:\n" << log << std::endl;
+        char infoLog[512];
+        glGetProgramInfoLog(program, 512, nullptr, infoLog);
+        std::cerr << "Shader program linking error:\n" << infoLog << std::endl;
     }
 
-    glDeleteShader(vertex);
-    glDeleteShader(fragment);
+    glDeleteShader(vs);
+    glDeleteShader(fs);
+
     return program;
 }
 
@@ -133,7 +129,7 @@ int main() {
     glEnableVertexAttribArray(0);
     glBindVertexArray(0);
 
-    unsigned int shaderProgram = createShaderProgram("shaders/vertex_shader.glsl", "shaders/fragment_shader.glsl");
+    unsigned int shaderProgram = createShaderProgram();
 
     while (!glfwWindowShouldClose(window)) {
         float time = glfwGetTime();

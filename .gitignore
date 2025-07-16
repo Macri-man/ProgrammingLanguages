@@ -220,14 +220,14 @@ cmake_install.cmake
 *.log
 
 # Shader intermediate and compiled binaries
-*.glsl
-*.vert
-*.frag
-*.geom
-*.tesc
-*.tese
-*.comp
-*.spv
+#*.glsl
+#*.vert
+#*.frag
+#*.geom
+#*.tesc
+#*.tese
+#*.comp
+#*.spv
 
 # IDE/project specific (VS, CLion, etc.)
 .vscode/

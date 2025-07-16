@@ -1,0 +1,4 @@
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug && cmake --build build --parallel
+
+glslangValidator -V shaders/vertex.vert -o shaders/vertex.spv
+glslangValidator -V shaders/fragment.frag -o shaders/fragment.spv
