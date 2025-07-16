@@ -1,4 +1,4 @@
-#include <glad/glad.h>   // Initialize OpenGL functions
+#include <glad/gl.h>   // Initialize OpenGL functions
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <cmath>
@@ -54,11 +54,7 @@ int main()
     glfwMakeContextCurrent(window);
 
     // Load OpenGL functions using GLAD
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-    {
-        std::cerr << "Failed to initialize GLAD\n";
-        return -1;
-    }
+    if (!gladLoadGL(glfwGetProcAddress)) { std::cerr << "Failed to initialize GLAD\n"; return -1; }
 
     glViewport(0, 0, 800, 600);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);

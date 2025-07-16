@@ -42,7 +42,7 @@ int main() {
     if (!window) { std::cerr << "Window failed\n"; glfwTerminate(); return -1; }
     glfwMakeContextCurrent(window);
 
-    if (!gladLoadGL(glfwGetProcAddress)) { std::cerr << "GLAD failed\n"; return -1; }
+    if (!gladLoadGL(glfwGetProcAddress)) { std::cerr << "Failed to initialize GLAD\n"; return -1; }
 
     // build shader program
     GLuint vs = compileShader(GL_VERTEX_SHADER,   vertexShaderSource);
