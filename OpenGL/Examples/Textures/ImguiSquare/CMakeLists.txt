@@ -1,13 +1,12 @@
 cmake_minimum_required(VERSION 3.14)
-project(TriangleImGuiExample)
+project(OpenGLTextureExample)
 
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Required for FetchContent
 include(FetchContent)
 
-# Fetch GLFW
+
+# GLFW using FetchContent
 FetchContent_Declare(
   glfw
   GIT_REPOSITORY https://github.com/glfw/glfw.git
@@ -15,15 +14,22 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glfw)
 
-# Fetch GLAD
+# STB using FetchContent
 FetchContent_Declare(
-  glad
-  GIT_REPOSITORY https://github.com/Dav1dde/glad.git
-  GIT_TAG        v2.0.8
-  SOURCE_SUBDIR cmake
+  stb
+  GIT_REPOSITORY https://github.com/nothings/stb.git
+  GIT_TAG        master
+)
+FetchContent_MakeAvailable(stb)
+
+# GLAD using FetchContent
+FetchContent_Declare(
+    glad
+    GIT_REPOSITORY https://github.com/Dav1dde/glad.git
+    GIT_TAG        v2.0.8
+    SOURCE_SUBDIR cmake
 )
 FetchContent_MakeAvailable(glad)
-
 glad_add_library(glad STATIC API gl:core=4.6)
 
 # Fetch ImGui
@@ -49,11 +55,9 @@ target_include_directories(imgui PUBLIC
   ${imgui_SOURCE_DIR}/backends
 )
 
-# Find OpenGL
+# === OpenGL ===
 find_package(OpenGL REQUIRED)
 
-# === Executable ===
-add_executable(OpenGLTriangle main.cpp)
+add_executable(OpenGLTextureExample main.cpp)
 
-# === Include and Link ===
-target_link_libraries(OpenGLTriangle PRIVATE glad glfw imgui OpenGL::GL)
+target_link_libraries(OpenGLTextureExample PRIVATE glad glfw stb imgui ${OpenGL_LIBRARIES}) 

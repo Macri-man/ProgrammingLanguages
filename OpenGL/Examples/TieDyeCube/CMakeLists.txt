@@ -42,4 +42,4 @@ find_package(OpenGL REQUIRED)
 add_executable(TieDyeCube main.cpp)
 
 # === Include and Link ===
-target_link_libraries(TieDyeCube PRIVATE glad glfw glm ${CMAKE_DL_LIBS} ${OpenGL_LIBRARIES})
+target_link_libraries(TieDyeCube PRIVATE glad glfw glm ${OpenGL_LIBRARIES})

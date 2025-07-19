@@ -16,7 +16,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glad)
 
-glad_add_library(glad STATIC API gl:core=4.6 LOCATION ${CMAKE_BINARY_DIR}/glad)
+glad_add_library(glad STATIC API gl:core=4.6)
 
 # === GLFW ===
 FetchContent_Declare(
