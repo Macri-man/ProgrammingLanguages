@@ -39,7 +39,7 @@ FetchContent_MakeAvailable(glm)
 find_package(OpenGL REQUIRED)
 
 # === Executable ===
-add_executable(OpenGLSquare main.cpp)
+add_executable(OpenGLCube main.cpp)
 
 # === Include and Link ===
-target_link_libraries(OpenGLSquare PRIVATE glad glfw glm ${CMAKE_DL_LIBS} ${OpenGL_LIBRARIES})
+target_link_libraries(OpenGLCube PRIVATE glad glfw glm ${CMAKE_DL_LIBS} ${OpenGL_LIBRARIES})

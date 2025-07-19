@@ -9,51 +9,76 @@
 
 // ---------- shaders ----------
 const char* vertexShaderSource = R"(
-#version 330 core
+#version 460 core
+
 layout(location = 0) in vec3 aPos;
 
-out vec3 FragPos;
+out vec3 FragPos;  // world-space position passed to fragment shader
 
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
 void main() {
-    FragPos = vec3(model * vec4(aPos, 1.0));
-    gl_Position = projection * view * vec4(FragPos, 1.0);
+    vec4 worldPos = model * vec4(aPos, 1.0);
+    FragPos = worldPos.xyz;
+    gl_Position = projection * view * worldPos;
 }
 )";
 
-
 const char* fragmentShaderSource = R"(
-#version 330 core
+#version 460 core
+
 out vec4 FragColor;
+
+in vec3 FragPos;
 
 uniform float time;
 
-in vec3 FragPos; // Interpolated from vertex shader (we'll add this)
+vec3 tieDyePattern(vec3 p, float t, float scale, vec3 phase) {
+    return vec3(
+        sin(p.x * scale + t + phase.x),
+        sin(p.y * scale + t + phase.y),
+        sin(p.z * scale + t + phase.z)
+    ) * 0.5 + 0.5;
+}
+
+// Approximate face normal based on position on cube surface
+vec3 approximateNormal(vec3 p) {
+    vec3 absP = abs(p);
+
+    if (absP.x > absP.y && absP.x > absP.z) {
+        return vec3(sign(p.x), 0.0, 0.0);
+    } else if (absP.y > absP.x && absP.y > absP.z) {
+        return vec3(0.0, sign(p.y), 0.0);
+    } else {
+        return vec3(0.0, 0.0, sign(p.z));
+    }
+}
 
 void main() {
-    // Normalize position to make the pattern centered and consistent
-    vec3 p = normalize(FragPos);
+    vec3 n = approximateNormal(FragPos);
 
-    // Create swirls and radial waves based on position and time
-    float swirl = sin(10.0 * length(p.xy) - time * 2.0) + 
-                  cos(10.0 * p.y + time) +
-                  sin(10.0 * p.x + time * 1.3);
-
-    float bands = sin(length(p * 5.0) + time * 2.0);
-
-    vec3 color = vec3(
-        0.5 + 0.5 * sin(swirl + time),
-        0.5 + 0.5 * cos(bands * 2.0 + time),
-        0.5 + 0.5 * sin(bands + swirl + time * 0.7)
-    );
+    vec3 color;
+    if (n.x > 0.9) {
+        color = tieDyePattern(FragPos, time, 8.0, vec3(0.0, 1.0, 2.0));
+    } else if (n.x < -0.9) {
+        color = tieDyePattern(FragPos, time, 10.0, vec3(1.0, 2.0, 3.0));
+    } else if (n.y > 0.9) {
+        color = tieDyePattern(FragPos, time, 12.0, vec3(2.0, 3.0, 4.0));
+    } else if (n.y < -0.9) {
+        color = tieDyePattern(FragPos, time, 6.0, vec3(3.0, 4.0, 5.0));
+    } else if (n.z > 0.9) {
+        color = tieDyePattern(FragPos, time, 9.0, vec3(4.0, 5.0, 6.0));
+    } else if (n.z < -0.9) {
+        color = tieDyePattern(FragPos, time, 11.0, vec3(5.0, 6.0, 7.0));
+    } else {
+        color = vec3(1.0, 0.0, 1.0);
+    }
 
     FragColor = vec4(color, 1.0);
 }
 )";
-
 
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
