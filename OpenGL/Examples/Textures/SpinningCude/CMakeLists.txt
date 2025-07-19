@@ -1,10 +1,9 @@
 cmake_minimum_required(VERSION 3.14)
-project(ImguiOpenGLTextures)
+project(OpenGLCubeTextures)
 
 set(CMAKE_CXX_STANDARD 20)
 
 include(FetchContent)
-
 
 # GLFW using FetchContent
 FetchContent_Declare(
@@ -34,34 +33,19 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(glad)
 glad_add_library(glad STATIC API gl:core=4.6)
 
-# Fetch ImGui
+# === GLM ===
 FetchContent_Declare(
-  imgui
-  GIT_REPOSITORY https://github.com/ocornut/imgui.git
-  GIT_TAG        v1.92.1
-
+  glm
+  GIT_REPOSITORY https://github.com/g-truc/glm.git
+  GIT_TAG 1.0.1
+  GIT_SHALLOW TRUE
 )
-FetchContent_MakeAvailable(imgui)
-
-add_library(imgui STATIC 
-    ${imgui_SOURCE_DIR}/imgui.cpp
-    ${imgui_SOURCE_DIR}/imgui_demo.cpp
-    ${imgui_SOURCE_DIR}/imgui_draw.cpp
-    ${imgui_SOURCE_DIR}/imgui_tables.cpp
-    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
-    ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
-    ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp)
-
-target_include_directories(imgui PUBLIC
-  ${imgui_SOURCE_DIR}
-  ${imgui_SOURCE_DIR}/backends
-)
-
+FetchContent_MakeAvailable(glm)
 
 # === OpenGL ===
 find_package(OpenGL REQUIRED)
 
-add_executable(ImguiOpenGLTextures main.cpp)
+add_executable(OpenGLCubeTextures main.cpp)
 
-target_link_libraries(ImguiOpenGLTextures PRIVATE glad glfw stb imgui ${OpenGL_LIBRARIES}) 
+target_link_libraries(OpenGLCubeTextures PRIVATE glad glfw glm stb ${OpenGL_LIBRARIES}) 
 

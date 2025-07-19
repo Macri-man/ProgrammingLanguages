@@ -10,10 +10,11 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <filesystem>
 
-// Your shader sources (unchanged)
+// --- Shader sources ---
 const char* vertexShaderSrc = R"(
-#version 330 core
+#version 460 core
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec2 aTexCoord;
 out vec2 TexCoord;
@@ -24,7 +25,7 @@ void main() {
 )";
 
 const char* fragmentShaderSrc = R"(
-#version 330 core
+#version 460 core
 out vec4 FragColor;
 in vec2 TexCoord;
 uniform sampler2D texture1;
@@ -32,6 +33,13 @@ void main() {
     FragColor = texture(texture1, TexCoord);
 }
 )";
+
+void CheckGLError(const std::string& context) {
+    GLenum err;
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        std::cerr << "[OpenGL Error][" << context << "]: 0x" << std::hex << err << std::endl;
+    }
+}
 
 GLuint CompileShader(GLenum type, const char* src) {
     GLuint shader = glCreateShader(type);
@@ -48,6 +56,7 @@ GLuint CompileShader(GLenum type, const char* src) {
 }
 
 GLuint LoadTexture(const char* path) {
+    std::cout << "Loading texture: " << path << std::endl;
     int width, height, channels;
     stbi_set_flip_vertically_on_load(true);
     unsigned char* data = stbi_load(path, &width, &height, &channels, 0);
@@ -56,7 +65,7 @@ GLuint LoadTexture(const char* path) {
         return 0;
     }
 
-    GLenum format = (channels == 3) ? GL_RGB : GL_RGBA;
+    GLenum format = channels == 3 ? GL_RGB : GL_RGBA;
 
     GLuint texture;
     glGenTextures(1, &texture);
@@ -64,7 +73,6 @@ GLuint LoadTexture(const char* path) {
     glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
 
-    // Set wrap and filter
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);	
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);	
@@ -75,35 +83,38 @@ GLuint LoadTexture(const char* path) {
 }
 
 int main() {
-    // Initialize GLFW
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW\n";
         return -1;
     }
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    
-    GLFWwindow* window = glfwCreateWindow(800, 600, "Texture Example with ImGui", nullptr, nullptr);
+
+    GLFWwindow* window = glfwCreateWindow(800, 600, "ImGui Texture Selector", nullptr, nullptr);
     if (!window) {
         std::cerr << "Failed to create GLFW window\n";
         glfwTerminate();
         return -1;
     }
-    glfwMakeContextCurrent(window);
-    gladLoadGL(glfwGetProcAddress);
 
-    // Setup ImGui context
+    glfwMakeContextCurrent(window);
+
+    if (!gladLoadGL(glfwGetProcAddress)) {
+        std::cerr << "Failed to initialize GLAD\n";
+        return -1;
+    }
+
+    CheckGLError("After GLAD init");
+
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
-    // Setup ImGui style
     ImGui::StyleColorsDark();
-    // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 330");
+    ImGui_ImplOpenGL3_Init("#version 460");
 
-    // Define vertices and UVs
     float vertices[] = {
         // positions        // tex coords
         -0.5f, -0.5f, 0.0f,  0.0f, 0.0f, 
@@ -111,79 +122,86 @@ int main() {
          0.5f,  0.5f, 0.0f,  1.0f, 1.0f, 
         -0.5f,  0.5f, 0.0f,  0.0f, 1.0f  
     };
+
     unsigned int indices[] = {
         0, 1, 2,
         2, 3, 0
     };
 
-    // Buffers
     GLuint VAO, VBO, EBO;
     glGenVertexArrays(1, &VAO);  
     glGenBuffers(1, &VBO);  
     glGenBuffers(1, &EBO);  
 
     glBindVertexArray(VAO);
-
     glBindBuffer(GL_ARRAY_BUFFER, VBO);  
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);  
-
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);  
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);  
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);  
     glEnableVertexAttribArray(0);  
-
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));  
     glEnableVertexAttribArray(1);  
 
-    // Shader program
+    CheckGLError("Buffer setup");
+
     GLuint vs = CompileShader(GL_VERTEX_SHADER, vertexShaderSrc);
     GLuint fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShaderSrc);
     GLuint shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vs);
     glAttachShader(shaderProgram, fs);
     glLinkProgram(shaderProgram);
+
+    GLint success = 0;
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if (!success) {
+        char info[512];
+        glGetProgramInfoLog(shaderProgram, 512, nullptr, info);
+        std::cerr << "Shader program linking failed: " << info << std::endl;
+    }
+
     glDeleteShader(vs);
     glDeleteShader(fs);
 
-    // Load multiple textures
-    std::vector<std::string> textureFiles = {
-        "flame_texture_color.png",
-        "flame_texture.png",
-        "flame_texture_color2.png"
-    };
+    std::vector<std::string> textureFiles;
+    for (const auto& entry : std::filesystem::directory_iterator("textures")) {
+        if (entry.is_regular_file() && entry.path().extension() == ".png") {
+            textureFiles.push_back(entry.path().string());
+        }
+    }
 
     std::vector<GLuint> textures;
-    for (auto& file : textureFiles) {
-        GLuint tex = LoadTexture(file.c_str());
+    for (const auto& path : textureFiles) {
+        GLuint tex = LoadTexture(path.c_str());
         if (tex != 0)
             textures.push_back(tex);
     }
+
     if (textures.empty()) {
-        std::cerr << "No textures loaded. Exiting.\n";
+        std::cerr << "No textures loaded.\n";
         return -1;
     }
 
     glUseProgram(shaderProgram);
-    glUniform1i(glGetUniformLocation(shaderProgram, "texture1"), 0); // GL_TEXTURE0
+    glUniform1i(glGetUniformLocation(shaderProgram, "texture1"), 0);
 
     int currentTextureIndex = 0;
 
-    // Main loop
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
-        // Start ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        // ImGui window for texture selection
         ImGui::Begin("Texture Selector");
-        if (ImGui::BeginCombo("Select Texture", textureFiles[currentTextureIndex].c_str())) {
-            for (int n = 0; n < (int)textureFiles.size(); n++) {
+        std::string preview = std::filesystem::path(textureFiles[currentTextureIndex]).filename().string();
+        if (ImGui::BeginCombo("Select Texture", preview.c_str())) {
+            for (int n = 0; n < (int)textureFiles.size(); ++n) {
                 bool is_selected = (currentTextureIndex == n);
-                if (ImGui::Selectable(textureFiles[n].c_str(), is_selected)) {
+                std::string label = std::filesystem::path(textureFiles[n]).filename().string();
+                if (ImGui::Selectable(label.c_str(), is_selected)) {
                     currentTextureIndex = n;
                 }
                 if (is_selected)
@@ -193,29 +211,25 @@ int main() {
         }
         ImGui::End();
 
-        // Rendering
-        glClearColor(0.1f, 0.2f, 0.3f, 1.0f);
+        glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
+        GLuint tex = textures[currentTextureIndex];
         glUseProgram(shaderProgram);
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, textures[currentTextureIndex]);
+        glBindTexture(GL_TEXTURE_2D, tex);
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
-        // Render ImGui on top
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
         glfwSwapBuffers(window);
     }
 
-    // Cleanup ImGui
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 
-    // Cleanup GL resources
     for (auto tex : textures)
         glDeleteTextures(1, &tex);
     glDeleteVertexArrays(1, &VAO);  
