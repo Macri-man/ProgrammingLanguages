@@ -1,6 +1,7 @@
 import numpy as np
 from PIL import Image
 import random
+import string
 
 class Config:
     def __init__(self,
@@ -117,17 +118,27 @@ def main():
     fixed_height = 800
     fixed_skip = 100
 
-    # List of parameter sets to vary
+    def random_param_set():
+        return {
+            "iterations": random.randint(2_000_000, 70_000_000),  
+            "transforms": random.randint(1, 30),                   
+            "zoom": round(random.uniform(0.5, 2.0), 2),            
+            "gamma": round(random.uniform(1.5, 2.5), 2)           
+        }
+    
+    length = 6
+    param_sets_random = [random_param_set() for _ in range(length)]
+
     param_sets = [
-        {"iterations": 1_000_000, "transforms": 20, "zoom": 1.0, "gamma": 2.2},
-        {"iterations": 2_000_000, "transforms": 30, "zoom": 1.2, "gamma": 2.0},
-        {"iterations": 5_000_000, "transforms": 35, "zoom": 1.1, "gamma": 2.5},
-        {"iterations": 3_000_000, "transforms": 40, "zoom": 0.9, "gamma": 1.8},
-        {"iterations": 4_000_000, "transforms": 45, "zoom": 1.5, "gamma": 2.3},
-        {"iterations": 6_000_000, "transforms": 50, "zoom": 1.3, "gamma": 2.1},
+        {"iterations": 61_000_000, "transforms": 13, "zoom": 1.0, "gamma": 2.2},
+        {"iterations": 62_000_000, "transforms": 7, "zoom": 1.2, "gamma": 2.0},
+        {"iterations": 63_000_000, "transforms": 10, "zoom": 1.1, "gamma": 2.5},
+        {"iterations": 64_000_000, "transforms": 15, "zoom": 0.9, "gamma": 1.8},
+        {"iterations": 65_000_000, "transforms": 25, "zoom": 1.5, "gamma": 2.3},
+        {"iterations": 66_000_000, "transforms": 5, "zoom": 1.9, "gamma": 2.1},
     ]
 
-    for i, params in enumerate(param_sets):
+    for i, params in enumerate(param_sets_random):
         config = Config(
             width=fixed_width,
             height=fixed_height,
@@ -139,7 +150,13 @@ def main():
         )
         fractal = FlameFractal(config)
         texture = fractal.generate()
-        filename = f"flame_texture_var{i+1}.png"
+
+        length = random.randint(0, 30)
+        chars = string.ascii_letters + string.digits
+        random_str = ''.join(random.choice(chars) for _ in range(length))
+
+        filename = f"flame_texture_variation{random_str}.png"
+        #filename = f"flame_texture_variation{i+1}.png"
         Image.fromarray(texture, mode='RGB').save(filename)
         print(f"Saved {filename} with params: {params}")
 

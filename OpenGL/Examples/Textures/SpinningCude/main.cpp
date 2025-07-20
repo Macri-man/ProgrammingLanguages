@@ -13,6 +13,7 @@
 #include <filesystem>
 #include <cstdlib>
 #include <ctime>
+#include <algorithm>
 #include <random>
 
 // Shader sources
@@ -223,8 +224,9 @@ int main() {
         return -1;
     }
 
-    std::srand(static_cast<unsigned>(std::time(nullptr)));
-    std::random_shuffle(allFiles.begin(), allFiles.end());
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::shuffle(allFiles.begin(), allFiles.end(), gen);
 
     std::vector<GLuint> textures(6);
     for (int i = 0; i < 6; ++i) {
@@ -253,8 +255,8 @@ int main() {
 
         glUseProgram(shaderProgram);
 
-        angleX += 0.3f;
-        angleY += 0.2f;
+        angleX += 0.3f + static_cast<float>(std::rand());
+        angleY += 0.1f + static_cast<float>(std::rand());
 
         glm::mat4 model = glm::rotate(glm::mat4(1.0f), glm::radians(angleX), glm::vec3(1, 0, 0));
         model = glm::rotate(model, glm::radians(angleY), glm::vec3(0, 1, 0));
