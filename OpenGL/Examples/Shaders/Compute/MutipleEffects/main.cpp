@@ -1,27 +1,176 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
+
 #include <iostream>
 #include <vector>
+#include <string>
+#include <tuple>
+#include <filesystem>  // C++17
+#include <cctype>      // for std::tolower
 
-GLuint compileShader(GLenum type, const char* src) {
+// --- Load all PNG/JPG/JPEG textures from folder (no namespace alias) ---
+std::vector<std::string> loadTextureList(const std::string& folder) {
+    std::vector<std::string> result;
+    if (!std::filesystem::exists(folder)) {
+        std::cerr << "Warning: Textures folder '" << folder << "' does not exist!\n";
+        return result;
+    }
+    for (const auto& entry : std::filesystem::directory_iterator(folder)) {
+        if (entry.is_regular_file()) {
+            std::string ext = entry.path().extension().string();
+            for (auto& c : ext) c = static_cast<char>(std::tolower(c));
+            if (ext == ".png" || ext == ".jpg" || ext == ".jpeg")
+                result.push_back(entry.path().string());
+        }
+    }
+    if (result.empty())
+        std::cerr << "Warning: No images found in '" << folder << "'\n";
+    return result;
+}
+
+// --- Vertex Shader for screen quad ---
+const char* quadVS = R"(#version 460
+out vec2 uv;
+void main() {
+    vec2 pos = vec2((gl_VertexID << 1) & 2, gl_VertexID & 2);
+    uv = pos;
+    gl_Position = vec4(pos * 2.0 - 1.0, 0.0, 1.0);
+})";
+
+// --- Fragment Shader to display texture ---
+const char* quadFS = R"(#version 460
+in vec2 uv;
+out vec4 fragColor;
+uniform sampler2D tex;
+void main() {
+    fragColor = texture(tex, uv);
+})";
+
+// --- Compute Shaders ---
+
+const char* invertCS = R"(#version 460
+layout(local_size_x = 16, local_size_y = 16) in;
+layout(binding = 0) uniform sampler2D inputTex;
+layout(rgba8, binding = 1) uniform writeonly image2D outputImg;
+void main() {
+    ivec2 p = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 size = textureSize(inputTex, 0);
+    if (p.x >= size.x || p.y >= size.y) return;
+    vec4 c = texelFetch(inputTex, p, 0);
+    imageStore(outputImg, p, vec4(1.0 - c.rgb, c.a));
+})";
+
+const char* grayscaleCS = R"(#version 460
+layout(local_size_x = 16, local_size_y = 16) in;
+layout(binding = 0) uniform sampler2D inputTex;
+layout(rgba8, binding = 1) uniform writeonly image2D outputImg;
+void main() {
+    ivec2 p = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 size = textureSize(inputTex, 0);
+    if (p.x >= size.x || p.y >= size.y) return;
+    vec4 c = texelFetch(inputTex, p, 0);
+    float g = dot(c.rgb, vec3(0.299, 0.587, 0.114));
+    imageStore(outputImg, p, vec4(g, g, g, c.a));
+})";
+
+const char* blurCS = R"(#version 460
+layout(local_size_x = 16, local_size_y = 16) in;
+layout(binding = 0) uniform sampler2D inputTex;
+layout(rgba8, binding = 1) uniform writeonly image2D outputImg;
+void main() {
+    ivec2 p = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 size = textureSize(inputTex, 0);
+    if (p.x >= size.x || p.y >= size.y) return;
+    vec4 sum = vec4(0.0);
+    int count = 0;
+    for (int dx = -1; dx <= 1; ++dx)
+        for (int dy = -1; dy <= 1; ++dy) {
+            ivec2 q = p + ivec2(dx, dy);
+            if (q.x >= 0 && q.y >= 0 && q.x < size.x && q.y < size.y) {
+                sum += texelFetch(inputTex, q, 0);
+                count++;
+            }
+        }
+    imageStore(outputImg, p, sum / float(count));
+})";
+
+const char* sobelCS = R"(#version 460
+layout(local_size_x = 16, local_size_y = 16) in;
+layout(binding = 0) uniform sampler2D inputTex;
+layout(rgba8, binding = 1) uniform writeonly image2D outputImg;
+void main() {
+    ivec2 p = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 size = textureSize(inputTex, 0);
+    if (p.x >= size.x || p.y >= size.y) return;
+
+    float kx[9] = float[9](-1,0,1,-2,0,2,-1,0,1);
+    float ky[9] = float[9](-1,-2,-1,0,0,0,1,2,1);
+
+    vec3 gx = vec3(0);
+    vec3 gy = vec3(0);
+    int idx = 0;
+
+    for (int y = -1; y <= 1; ++y)
+    for (int x = -1; x <= 1; ++x, ++idx) {
+        ivec2 coord = p + ivec2(x, y);
+        if (coord.x < 0 || coord.y < 0 || coord.x >= size.x || coord.y >= size.y)
+            continue;
+        vec3 c = texelFetch(inputTex, coord, 0).rgb;
+        gx += c * kx[idx];
+        gy += c * ky[idx];
+    }
+
+    float mag = length(gx + gy);
+    imageStore(outputImg, p, vec4(vec3(mag), 1.0));
+})";
+
+const char* sepiaCS = R"(#version 460
+layout(local_size_x = 16, local_size_y = 16) in;
+layout(binding = 0) uniform sampler2D inputTex;
+layout(rgba8, binding = 1) uniform writeonly image2D outputImg;
+void main() {
+    ivec2 p = ivec2(gl_GlobalInvocationID.xy);
+    vec4 c = texelFetch(inputTex, p, 0);
+    float r = dot(c.rgb, vec3(0.393, 0.769, 0.189));
+    float g = dot(c.rgb, vec3(0.349, 0.686, 0.168));
+    float b = dot(c.rgb, vec3(0.272, 0.534, 0.131));
+    imageStore(outputImg, p, vec4(clamp(vec3(r, g, b), 0.0, 1.0), c.a));
+})";
+
+const char* binarizeCS = R"(#version 460
+layout(local_size_x = 16, local_size_y = 16) in;
+layout(binding = 0) uniform sampler2D inputTex;
+layout(rgba8, binding = 1) uniform writeonly image2D outputImg;
+void main() {
+    ivec2 p = ivec2(gl_GlobalInvocationID.xy);
+    vec4 c = texelFetch(inputTex, p, 0);
+    float g = dot(c.rgb, vec3(0.299, 0.587, 0.114));
+    float b = g > 0.5 ? 1.0 : 0.0;
+    imageStore(outputImg, p, vec4(vec3(b), c.a));
+})";
+
+// --- Shader helper functions ---
+GLuint createShader(GLenum type, const char* src) {
     GLuint shader = glCreateShader(type);
     glShaderSource(shader, 1, &src, nullptr);
     glCompileShader(shader);
-    GLint status;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
-    if (!status) {
-        char log[512];
-        glGetShaderInfoLog(shader, 512, nullptr, log);
-        std::cerr << "Shader error:\n" << log << "\n";
+    GLint ok;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &ok);
+    if (!ok) {
+        char log[1024];
+        glGetShaderInfoLog(shader, 1024, nullptr, log);
+        std::cerr << "Shader error:\n" << log << std::endl;
     }
     return shader;
 }
 
-GLuint createProgram(const char* src, GLenum type) {
-    GLuint shader = compileShader(type, src);
+GLuint createProgram(GLenum type, const char* src) {
+    GLuint shader = createShader(type, src);
     GLuint prog = glCreateProgram();
     glAttachShader(prog, shader);
     glLinkProgram(prog);
@@ -29,240 +178,144 @@ GLuint createProgram(const char* src, GLenum type) {
     return prog;
 }
 
-// Vertex and Fragment for fullscreen triangle
-const char* fullscreenVert = R"(
-#version 460 core
-const vec2 pos[3] = vec2[3](vec2(-1,-1), vec2(3,-1), vec2(-1,3));
-void main() { gl_Position = vec4(pos[gl_VertexID], 0.0, 1.0); }
-)";
-
-const char* fullscreenFrag = R"(
-#version 460 core
-out vec4 FragColor;
-uniform sampler2D screenTex;
-void main() {
-    vec2 uv = gl_FragCoord.xy / vec2(800.0, 600.0);
-    FragColor = texture(screenTex, uv);
-}
-)";
-
-// Compute shader effects
-const char* computeShaders[] = {
-    // Invert
-    R"(
-#version 460
-layout(local_size_x = 16, local_size_y = 16) in;
-layout(rgba8, binding = 0) uniform image2D img;
-
-void main() {
-    ivec2 p = ivec2(gl_GlobalInvocationID.xy);
-    ivec2 size = imageSize(img);
-
-    // Bounds check to avoid out-of-bounds errors
-    if (p.x >= size.x || p.y >= size.y) return;
-
-    vec4 color = imageLoad(img, p);
-    
-    // Optional: preserve alpha, invert only RGB
-    vec3 inverted = vec3(1.0) - color.rgb;
-
-    // Optional: apply gamma or contrast tweak
-    // inverted = pow(inverted, vec3(0.8));
-
-    imageStore(img, p, vec4(inverted, color.a));
-}
-)",
-
-    // Grayscale
-    R"(
-    #version 460
-    layout(local_size_x = 16, local_size_y = 16) in;
-    layout(rgba8, binding = 0) uniform image2D img;
-    void main() {
-        ivec2 p = ivec2(gl_GlobalInvocationID.xy);
-        vec4 c = imageLoad(img, p);
-        float g = dot(c.rgb, vec3(0.299, 0.587, 0.114));
-        imageStore(img, p, vec4(g, g, g, 1.0));
-    })",
-
-    // Checkerboard
-    R"(
-    #version 460
-    layout(local_size_x = 16, local_size_y = 16) in;
-    layout(rgba8, binding = 0) uniform image2D img;
-    void main() {
-        ivec2 p = ivec2(gl_GlobalInvocationID.xy);
-        int check = (p.x / 32 + p.y / 32) % 2;
-        vec3 color = check == 0 ? vec3(0.2, 0.2, 0.2) : vec3(1.0, 1.0, 1.0);
-        imageStore(img, p, vec4(color, 1.0));
-    })",
-
-    // Blur
-    R"(
-    #version 460
-    layout(local_size_x = 16, local_size_y = 16) in;
-    layout(rgba8, binding = 0) uniform image2D img;
-    void main() {
-        ivec2 p = ivec2(gl_GlobalInvocationID.xy);
-        vec3 sum = vec3(0.0);
-        for (int x = -1; x <= 1; ++x)
-        for (int y = -1; y <= 1; ++y)
-            sum += imageLoad(img, p + ivec2(x,y)).rgb;
-        imageStore(img, p, vec4(sum / 9.0, 1.0));
-    })",
-
-    // Edge Detection
-   R"(
-#version 460
-layout(local_size_x = 16, local_size_y = 16) in;
-layout(rgba8, binding = 0) uniform image2D img;
-
-void main() {
-    ivec2 size = imageSize(img);
-    ivec2 p = ivec2(gl_GlobalInvocationID.xy);
-
-    if (p.x <= 0 || p.y <= 0 || p.x >= size.x - 1 || p.y >= size.y - 1)
-        return;
-
-    float Gx[3][3] = float[3][3](
-        float[3](-1.0, 0.0, 1.0),
-        float[3](-2.0, 0.0, 2.0),
-        float[3](-1.0, 0.0, 1.0)
-    );
-    float Gy[3][3] = float[3][3](
-        float[3](-1.0, -2.0, -1.0),
-        float[3]( 0.0,  0.0,  0.0),
-        float[3]( 1.0,  2.0,  1.0)
-    );
-
-    float sx = 0.0;
-    float sy = 0.0;
-
-    for (int i = -1; i <= 1; ++i) {
-        for (int j = -1; j <= 1; ++j) {
-            vec3 rgb = imageLoad(img, p + ivec2(i, j)).rgb;
-            float intensity = dot(rgb, vec3(0.299, 0.587, 0.114)); // luminance
-            sx += intensity * Gx[i + 1][j + 1];
-            sy += intensity * Gy[i + 1][j + 1];
-        }
+// --- Load texture with ping-pong pair ---
+std::pair<GLuint, GLuint> loadTexturePingPong(const char* path, int& w, int& h) {
+    int c;
+    stbi_set_flip_vertically_on_load(true);
+    unsigned char* img = stbi_load(path, &w, &h, &c, 4);
+    if (!img) {
+        std::cerr << "Failed to load image: " << path << "\n";
+        return {0, 0};
     }
 
-    float edgeStrength = length(vec2(sx, sy)); // sobel magnitude
-    edgeStrength = clamp(edgeStrength, 0.0, 1.0);
-    
-    // Optional enhancement:
-    edgeStrength = pow(edgeStrength, 0.5); // gamma correction for visual contrast
-    // float threshold = 0.2;
-    // edgeStrength = edgeStrength > threshold ? 1.0 : 0.0;
-
-    vec3 edgeColor = vec3(edgeStrength);
-    imageStore(img, p, vec4(edgeColor, 1.0));
+    GLuint texA, texB;
+    auto create = [&](GLuint& tex) {
+        glGenTextures(1, &tex);
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, w, h);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, img);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    };
+    create(texA);
+    create(texB);
+    stbi_image_free(img);
+    return {texA, texB};
 }
-)",
-
-    // Mandelbrot
-    R"(
-#version 460
-layout(local_size_x = 16, local_size_y = 16) in;
-layout(rgba8, binding = 0) uniform image2D img;
-
-vec3 hsv2rgb(vec3 c) {
-    vec3 rgb = clamp(abs(mod(c.x * 6.0 + vec3(0,4,2), 6.0) - 3.0) - 1.0, 0.0, 1.0);
-    return c.z * mix(vec3(1.0), rgb, c.y);
-}
-
-void main() {
-    ivec2 p = ivec2(gl_GlobalInvocationID.xy);
-    vec2 uv = (vec2(p) / vec2(800.0, 600.0)) * 3.0 - vec2(2.0, 1.5);
-
-    vec2 z = vec2(0.0);
-    vec2 c = uv;
-
-    float maxIter = 300.0;
-    float iter = 0.0;
-
-    for (int i = 0; i < int(maxIter); ++i) {
-        if (dot(z, z) > 4.0) break;
-        z = vec2(z.x * z.x - z.y * z.y, 2.0 * z.x * z.y) + c;
-        iter = float(i) + 1.0 - log(log(length(z))) / log(2.0);  // Smooth coloring
-    }
-
-    float norm = iter / maxIter;
-    vec3 color = hsv2rgb(vec3(0.95 - norm * 0.95, 0.6 + 0.4 * norm, norm)); // hue, sat, val
-    imageStore(img, p, vec4(color, 1.0));
-}
-)",
-
-    // Julia
-    R"(
-    #version 460
-    layout(local_size_x = 16, local_size_y = 16) in;
-    layout(rgba8, binding = 0) uniform image2D img;
-    void main() {
-        ivec2 p = ivec2(gl_GlobalInvocationID.xy);
-        vec2 uv = (vec2(p) / vec2(800.0, 600.0)) * 3.0 - vec2(1.5, 1.5);
-        vec2 z = uv;
-        vec2 c = vec2(-0.70176, -0.3842);
-        int iter = 0, maxIter = 100;
-        while (dot(z,z) < 4.0 && iter < maxIter) {
-            z = vec2(z.x*z.x - z.y*z.y, 2.0*z.x*z.y) + c;
-            iter++;
-        }
-        float t = float(iter) / maxIter;
-        vec3 col = vec3(0.5 + 0.5*cos(6.2831*t), 0.5 + 0.5*cos(6.2831*t + 2.0), 0.5 + 0.5*cos(6.2831*t + 4.0));
-        imageStore(img, p, vec4(col, 1.0));
-    })"
-};
 
 int main() {
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    GLFWwindow* win = glfwCreateWindow(800, 600, "Compute Shader Effects", 0, 0);
+    if (!glfwInit()) {
+        std::cerr << "Failed to initialize GLFW\n";
+        return -1;
+    }
+    GLFWwindow* win = glfwCreateWindow(1280, 720, "Ping-Pong Compute Effects", nullptr, nullptr);
+    if (!win) {
+        std::cerr << "Failed to create GLFW window\n";
+        glfwTerminate();
+        return -1;
+    }
     glfwMakeContextCurrent(win);
-    gladLoadGL(glfwGetProcAddress);
+    if (!gladLoadGL(glfwGetProcAddress)) {
+        std::cerr << "Failed to initialize GLAD\n";
+        return -1;
+    }
+    glEnable(GL_TEXTURE_2D);
 
-    IMGUI_CHECKVERSION(); ImGui::CreateContext();
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
     ImGui_ImplGlfw_InitForOpenGL(win, true);
     ImGui_ImplOpenGL3_Init("#version 460");
 
-    GLuint tex;
-    glGenTextures(1, &tex);
-    glBindTexture(GL_TEXTURE_2D, tex);
-    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, 800, 600);
+    std::vector<std::string> textures = loadTextureList("textures");
+    if (textures.empty()) {
+        std::cerr << "No textures found in 'textures' folder. Exiting.\n";
+        return -1;
+    }
 
-    GLuint vao; glGenVertexArrays(1, &vao); glBindVertexArray(vao);
-    GLuint vs = compileShader(GL_VERTEX_SHADER, fullscreenVert);
-    GLuint fs = compileShader(GL_FRAGMENT_SHADER, fullscreenFrag);
-    GLuint quadProg = glCreateProgram();
-    glAttachShader(quadProg, vs); glAttachShader(quadProg, fs); glLinkProgram(quadProg);
-
-    std::vector<GLuint> programs;
-    for (const char* src : computeShaders)
-        programs.push_back(createProgram(src, GL_COMPUTE_SHADER));
-
-    const char* labels[] = {
-        "Invert", "Grayscale", "Checkerboard", "Blur", "Edge", "Mandelbrot", "Julia"
+    const char* shaderNames[] = {
+        "Invert", "Grayscale", "Blur",
+        "Sobel Edge", "Sepia", "Binarize"
     };
-    int currentEffect = 0;
+
+    const char* shaderSrcs[] = {
+        invertCS, grayscaleCS, blurCS,
+        sobelCS, sepiaCS, binarizeCS
+    };
+
+    bool toggles[6] = { false };
+
+    std::vector<GLuint> computeProgs;
+    for (const char* src : shaderSrcs)
+        computeProgs.push_back(createProgram(GL_COMPUTE_SHADER, src));
+
+    GLuint quadProg = glCreateProgram();
+    glAttachShader(quadProg, createShader(GL_VERTEX_SHADER, quadVS));
+    glAttachShader(quadProg, createShader(GL_FRAGMENT_SHADER, quadFS));
+    glLinkProgram(quadProg);
+
+    int selected = 0, texW = 0, texH = 0;
+    GLuint texA = 0, texB = 0;
+    bool reload = true;
 
     while (!glfwWindowShouldClose(win)) {
         glfwPollEvents();
-        ImGui_ImplOpenGL3_NewFrame(); ImGui_ImplGlfw_NewFrame(); ImGui::NewFrame();
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
 
-        ImGui::Begin("Shader Selector");
-        ImGui::Combo("Effect", &currentEffect, labels, IM_ARRAYSIZE(labels));
-        ImGui::End();
+       if (ImGui::Begin("Controls")) {
+    if (ImGui::Combo("Texture", &selected,
+        [](void* data, int idx, const char** out) {
+            auto& vec = *static_cast<std::vector<std::string>*>(data);
+            *out = vec[idx].c_str();
+            return true;
+        }, (void*)&textures, (int)textures.size()))
+        reload = true;
 
-        glUseProgram(programs[currentEffect]);
-        glBindImageTexture(0, tex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8);
-        glDispatchCompute(800 / 16, 600 / 16, 1);
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+    for (int i = 0; i < 6; ++i)
+        ImGui::Checkbox(shaderNames[i], &toggles[i]);
 
+    if (ImGui::Button("Reset")) {
+        for (int i = 0; i < 6; ++i)
+            toggles[i] = false;
+        reload = true;
+    }
+}
+ImGui::End();
+
+
+        if (reload) {
+            if (texA) glDeleteTextures(1, &texA);
+            if (texB) glDeleteTextures(1, &texB);
+            std::tie(texA, texB) = loadTexturePingPong(textures[selected].c_str(), texW, texH);
+            reload = false;
+        }
+
+        GLuint srcTex = texA, dstTex = texB;
+        for (int i = 0; i < 6; ++i) {
+            if (!toggles[i]) continue;
+            glUseProgram(computeProgs[i]);
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, srcTex);
+
+            glBindImageTexture(0, srcTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);
+            glBindImageTexture(1, dstTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
+
+            glUniform1i(glGetUniformLocation(computeProgs[i], "inputTex"), 0);
+
+            glDispatchCompute((texW + 15) / 16, (texH + 15) / 16, 1);
+            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+            std::swap(srcTex, dstTex);
+        }
+
+        int w, h;
+        glfwGetFramebufferSize(win, &w, &h);
+        glViewport(0, 0, w, h);
         glClear(GL_COLOR_BUFFER_BIT);
         glUseProgram(quadProg);
-        glBindTexture(GL_TEXTURE_2D, tex);
+        glBindTexture(GL_TEXTURE_2D, srcTex);
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
         ImGui::Render();
@@ -270,10 +323,15 @@ int main() {
         glfwSwapBuffers(win);
     }
 
-    for (auto p : programs) glDeleteProgram(p);
     glDeleteProgram(quadProg);
-    glDeleteTextures(1, &tex);
-    ImGui_ImplOpenGL3_Shutdown(); ImGui_ImplGlfw_Shutdown(); ImGui::DestroyContext();
-    glfwDestroyWindow(win); glfwTerminate();
+    for (auto p : computeProgs) glDeleteProgram(p);
+    glDeleteTextures(1, &texA);
+    glDeleteTextures(1, &texB);
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+    glfwDestroyWindow(win);
+    glfwTerminate();
+
     return 0;
 }

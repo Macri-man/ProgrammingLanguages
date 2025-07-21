@@ -134,7 +134,7 @@ def main():
         {"iterations": 100_000_000, "transforms": 7, "zoom": 1.2, "gamma": 2.0},
     ]
 
-    for i, params in enumerate(param_sets):
+    for i, params in enumerate(param_sets_random):
         config = Config(
             width=fixed_width,
             height=fixed_height,

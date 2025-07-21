@@ -130,12 +130,8 @@ def main():
     param_sets_random = [random_param_set() for _ in range(length)]
 
     param_sets = [
-        {"iterations": 61_000_000, "transforms": 13, "zoom": 1.0, "gamma": 2.2},
-        {"iterations": 62_000_000, "transforms": 7, "zoom": 1.2, "gamma": 2.0},
-        {"iterations": 63_000_000, "transforms": 10, "zoom": 1.1, "gamma": 2.5},
-        {"iterations": 64_000_000, "transforms": 15, "zoom": 0.9, "gamma": 1.8},
-        {"iterations": 65_000_000, "transforms": 25, "zoom": 1.5, "gamma": 2.3},
-        {"iterations": 66_000_000, "transforms": 5, "zoom": 1.9, "gamma": 2.1},
+        {"iterations": 100_000_000, "transforms": 15, "zoom": 1.3, "gamma": 2.2},
+        {"iterations": 100_000_000, "transforms": 7, "zoom": 1.2, "gamma": 2.0},
     ]
 
     for i, params in enumerate(param_sets_random):

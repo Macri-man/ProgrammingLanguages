@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.15)
-project(OpenGLMultipleEffects)
+project(OpenGLMultipleFractals)
 
 set(CMAKE_CXX_STANDARD 20)
+
 
 # Required for FetchContent
 include(FetchContent)
@@ -26,16 +27,6 @@ FetchContent_Declare(
     GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(glfw)
-
-# === STB ===
-FetchContent_Declare(
-  stb
-  GIT_REPOSITORY https://github.com/nothings/stb.git
-  GIT_TAG        master
-)
-FetchContent_MakeAvailable(stb)
-add_library(stb INTERFACE)
-target_include_directories(stb INTERFACE ${stb_SOURCE_DIR})
 
 # === ImGui ===
 FetchContent_Declare(
@@ -64,7 +55,7 @@ target_include_directories(imgui PUBLIC
 find_package(OpenGL REQUIRED)
 
 # === Executable ===
-add_executable(OpenGLMultipleEffects main.cpp)
+add_executable(OpenGLMultipleFractals main.cpp)
 
 # === Include and Link ===
-target_link_libraries(OpenGLMultipleEffects PRIVATE glad glfw imgui stb)
+target_link_libraries(OpenGLMultipleFractals PRIVATE glad glfw imgui)
