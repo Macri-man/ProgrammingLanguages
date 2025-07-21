@@ -283,7 +283,6 @@ int main() {
 }
 ImGui::End();
 
-
         if (reload) {
             if (texA) glDeleteTextures(1, &texA);
             if (texB) glDeleteTextures(1, &texB);
