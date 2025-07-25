@@ -42,10 +42,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glm)
 
-# === OpenGL ===
-find_package(OpenGL REQUIRED)
-
 add_executable(OpenGLCubeTextures main.cpp)
 
-target_link_libraries(OpenGLCubeTextures PRIVATE glad glfw glm stb ${OpenGL_LIBRARIES}) 
+target_link_libraries(OpenGLCubeTextures PRIVATE glad glfw glm stb) 
 

@@ -27,9 +27,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glfw)
 
-# === OpenGL ===
-find_package(OpenGL REQUIRED)
-
 # === Executable ===
 add_executable(OpenGLSquare main.cpp)
 

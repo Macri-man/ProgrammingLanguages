@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 project(OpenGLTriangle)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Required for FetchContent
 include(FetchContent)
@@ -14,8 +15,8 @@ FetchContent_Declare(
   GIT_SHALLOW TRUE
   SOURCE_SUBDIR cmake
 )
-FetchContent_MakeAvailable(glad)
 
+FetchContent_MakeAvailable(glad)
 glad_add_library(glad STATIC API gl:core=4.6)
 
 # === GLFW ===
@@ -27,13 +28,9 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glfw)
 
-
-# === OpenGL ===
-find_package(OpenGL REQUIRED)
-
 # === Executable ===
 add_executable(OpenGLTriangle main.cpp)
 
 # === Include and Link ===
-target_link_libraries(OpenGLTriangle PRIVATE glad glfw ${OpenGL_LIBRARIES})
+target_link_libraries(OpenGLTriangle PRIVATE glad glfw)
 

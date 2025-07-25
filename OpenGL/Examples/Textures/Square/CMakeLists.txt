@@ -32,11 +32,8 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(glad)
 glad_add_library(glad STATIC API gl:core=4.6)
 
-# === OpenGL ===
-find_package(OpenGL REQUIRED)
-
 add_executable(OpenGLTextureExample main.cpp)
 
-target_link_libraries(OpenGLTextureExample PRIVATE glad glfw ${OpenGL_LIBRARIES}) 
+target_link_libraries(OpenGLTextureExample PRIVATE glad glfw) 
 
 target_include_directories(OpenGLTextureExample PRIVATE ${stb_SOURCE_DIR} )

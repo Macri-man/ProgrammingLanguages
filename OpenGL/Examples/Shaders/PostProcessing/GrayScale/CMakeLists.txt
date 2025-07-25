@@ -56,9 +56,6 @@ target_include_directories(imgui PUBLIC
   ${imgui_SOURCE_DIR}/backends
 )
 
-# === OpenGL ===
-find_package(OpenGL REQUIRED)
-
 add_executable(PostProcessGrayScale main.cpp)
 
 target_link_libraries(PostProcessGrayScale PRIVATE glad glfw stb imgui ${OpenGL_LIBRARIES}) 

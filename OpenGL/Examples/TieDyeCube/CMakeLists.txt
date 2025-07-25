@@ -35,11 +35,8 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glm)
 
-# === OpenGL ===
-find_package(OpenGL REQUIRED)
-
 # === Executable ===
 add_executable(TieDyeCube main.cpp)
 
 # === Include and Link ===
-target_link_libraries(TieDyeCube PRIVATE glad glfw glm ${OpenGL_LIBRARIES})
+target_link_libraries(TieDyeCube PRIVATE glad glfw glm)

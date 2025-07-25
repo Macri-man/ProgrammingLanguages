@@ -37,9 +37,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glm)
 
-# === OpenGL ===
-find_package(OpenGL REQUIRED)
-
 # === Executable ===
 add_executable(OpenGLRayTracing main.cpp)
 

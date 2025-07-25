@@ -51,9 +51,6 @@ target_include_directories(imgui PUBLIC
   ${imgui_SOURCE_DIR}/backends
 )
 
-# === OpenGL ===
-find_package(OpenGL REQUIRED)
-
 # === Executable ===
 add_executable(OpenGLMultipleFractals main.cpp)
 

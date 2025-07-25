@@ -5,7 +5,7 @@
 
 // Vertex shader source code
 const char* vertexShaderSource = R"glsl(
-    #version 330 core
+    #version 460 core
     layout (location = 0) in vec3 aPos;
 
     void main()
@@ -16,13 +16,19 @@ const char* vertexShaderSource = R"glsl(
 
 // Fragment shader source code
 const char* fragmentShaderSource = R"glsl(
-    #version 330 core
+    #version 460 core
     out vec4 FragColor;
-    uniform vec4 ourColor;
+    uniform float uTime;
 
     void main()
     {
-        FragColor = ourColor; // Use the dynamic color
+
+        float greenValue = (sin(uTime) / 2.0) + 0.5;
+        float redValue   = (cos(uTime) / 2.0) + 0.5;
+        float blueValue  = (sin(uTime * 0.5) / 2.0) + 0.5;
+
+        FragColor = vec4(redValue, greenValue, blueValue, 1.0);
+    
     }
 )glsl";
 
@@ -32,11 +38,20 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height);
 }
 
+void glfwErrorCallback(int error, const char* description) {
+    std::cerr << "GLFW Error (" << error << "): " << description << std::endl;
+}
+
+
 int main()
 {
-    glfwInit();
+    glfwSetErrorCallback(glfwErrorCallback);
+     if (!glfwInit()) {
+        std::cerr << "Failed to initialize GLFW\n";
+        return -1;
+    }
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4); 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     GLFWwindow* window = glfwCreateWindow(800, 600, "OpenGL Triangle", NULL, NULL);
@@ -88,12 +103,6 @@ int main()
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
     glLinkProgram(shaderProgram);
-
-    int colorLocation = glGetUniformLocation(shaderProgram, "ourColor");
-    if (colorLocation == -1)
-    {
-        std::cerr << "Failed to get color location in shader program\n";
-    }
 
     // Check for linking errors
     glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
@@ -149,13 +158,10 @@ int main()
 
         // Calculate color using time
         float timeValue = glfwGetTime();
-        float greenValue = (std::sin(timeValue) / 2.0f) + 0.5f;
-        float redValue = (std::cos(timeValue) / 2.0f) + 0.5f;
-        float blueValue = (std::sin(timeValue * 0.5f) / 2.0f) + 0.5f;
 
         // Set the uniform color
         glUseProgram(shaderProgram);
-        glUniform4f(colorLocation, redValue, greenValue, blueValue, 1.0f);
+        glUniform1f(glGetUniformLocation(shaderProgram, "uTime"), timeValue);
 
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 3);
