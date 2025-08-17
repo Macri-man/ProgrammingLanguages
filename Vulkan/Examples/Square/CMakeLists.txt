@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(VulkanTriangle)
+project(VulkanSquare)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -47,7 +47,7 @@ foreach(SHADER ${SHADERS})
 endforeach()
 
 # === Executable ===
-add_executable(VulkanTriangle main.cpp ${SPV_SHADERS})
+add_executable(VulkanSquare main.cpp ${SPV_SHADERS})
 
 # === Include and Link ===
-target_link_libraries(VulkanTriangle PRIVATE glfw)
+target_link_libraries(VulkanSquare PRIVATE glfw)
