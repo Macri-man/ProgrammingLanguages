@@ -29,7 +29,6 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/KhronosGroup/Vulkan-Loader.git
   GIT_TAG v1.4.323
 )
-set(BUILD_TESTS OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(vulkan_loader)
 
 # === SPVShaders ===
@@ -42,12 +41,17 @@ foreach(SHADER ${SHADERS})
         OUTPUT "${CMAKE_BINARY_DIR}/shaders.spv/${FILE_NAME}.spv"
         COMMAND glslangValidator -V ${SHADER} -o "${CMAKE_BINARY_DIR}/shaders.spv/${FILE_NAME}.spv"
         DEPENDS ${SHADER}
+        COMMENT "Compiling shader ${FILE_NAME}"
+        VERBATIM
     )
     list(APPEND SPV_SHADERS "${CMAKE_BINARY_DIR}/shaders.spv/${FILE_NAME}.spv")
 endforeach()
 
+add_custom_target(Shaders ALL DEPENDS ${SPV_SHADERS})
+
 # === Executable ===
 add_executable(VulkanSquare main.cpp ${SPV_SHADERS})
+add_dependencies(VulkanSquare Shaders)
 
 # === Include and Link ===
 target_link_libraries(VulkanSquare PRIVATE glfw vulkan)

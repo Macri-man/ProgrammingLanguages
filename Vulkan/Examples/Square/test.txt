@@ -1,8 +1,9 @@
 glslangValidator -V shaders/triangle.vert -o shaders/vert.spv
 glslangValidator -V shaders/triangle.frag -o shaders/frag.spv
 
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug && cmake --build build --parallel && ./build/VulkanSquare
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_LOADER=ON && cmake --build build --parallel && ./build/VulkanSquare
 
-rm -rf build && cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug && cmake --build build --parallel && ./build/VulkanSquare
+rm -rf build && cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_LOADER=ON && cmake --build build --parallel && ./build/VulkanSquare
 
 rm -rf build
+
