@@ -50,4 +50,4 @@ endforeach()
 add_executable(VulkanSquare main.cpp ${SPV_SHADERS})
 
 # === Include and Link ===
-target_link_libraries(VulkanSquare PRIVATE glfw)
+target_link_libraries(VulkanSquare PRIVATE glfw vulkan)
