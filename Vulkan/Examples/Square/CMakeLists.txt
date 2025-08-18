@@ -14,22 +14,35 @@ FetchContent_Declare(
     GIT_TAG 3.3.8
     GIT_SHALLOW TRUE
 )
+set(GLFW_INCLUDE_NONE ON CACHE BOOL "")
 FetchContent_MakeAvailable(glfw)
 
 # === Vulkan ===
 FetchContent_Declare(
   vulkan_headers
   GIT_REPOSITORY https://github.com/KhronosGroup/Vulkan-Headers.git
-  GIT_TAG v1.4.323
+  GIT_TAG v1.4.325
 )
 FetchContent_MakeAvailable(vulkan_headers)
 
 FetchContent_Declare(
   vulkan_loader
   GIT_REPOSITORY https://github.com/KhronosGroup/Vulkan-Loader.git
-  GIT_TAG v1.4.323
+  GIT_TAG v1.4.325
 )
-FetchContent_MakeAvailable(vulkan_loader)
+FetchContent_GetProperties(vulkan_loader)
+if(NOT vulkan_loader_POPULATED)
+    FetchContent_Populate(vulkan_loader)
+
+    if(UNIX)
+        execute_process(
+            COMMAND ${CMAKE_COMMAND} -E chmod +x
+                    ${vulkan_loader_SOURCE_DIR}/loader/asm_offset
+        )
+    endif()
+    
+    add_subdirectory(${vulkan_loader_SOURCE_DIR} ${vulkan_loader_BINARY_DIR})
+endif()
 
 # === SPVShaders ===
 file(GLOB SHADERS "shaders/*.vert" "shaders/*.frag")
@@ -54,4 +67,10 @@ add_executable(VulkanSquare main.cpp ${SPV_SHADERS})
 add_dependencies(VulkanSquare Shaders)
 
 # === Include and Link ===
-target_link_libraries(VulkanSquare PRIVATE glfw vulkan)
+target_include_directories(VulkanSquare PRIVATE
+    ${vulkan_headers_SOURCE_DIR}/include
+    ${vulkan_loader_SOURCE_DIR}/loader
+    ${glfw_SOURCE_DIR}/include
+)
+
+target_link_libraries(VulkanSquare PRIVATE glfw vulkan_loader dl pthread)
