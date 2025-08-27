@@ -1,0 +1,47 @@
+#version 450
+layout (local_size_x = 16, local_size_y = 16) in;
+
+// src RGBA
+layout(binding = 0, rgba8) readonly uniform image2D srcRGBA;
+// plane 0: Y (r8)
+layout(binding = 1, r8) writeonly uniform image2D dstY;
+// plane 1: interleaved UV (rg8) where .r = U, .g = V
+layout(binding = 2, rg8) writeonly uniform image2D dstUV;
+
+layout(push_constant) uniform Push {
+    int width;
+    int height;
+} push;
+
+vec2 rgb_to_uv(vec3 c) {
+    float u = -0.148682f * c.r - 0.291000f * c.g + 0.439692f * c.b + 0.5f;
+    float v = 0.439215f * c.r - 0.367788f * c.g - 0.071427f * c.b + 0.5f;
+    return vec2(u, v);
+}
+
+float rgb_to_y(vec3 c) {
+    return 0.257f * c.r + 0.504f * c.g + 0.098f * c.b + 0.0625f;
+}
+
+void main() {
+    ivec2 gid = ivec2(gl_GlobalInvocationID.xy);
+    if (gid.x >= push.width || gid.y >= push.height) return;
+
+    vec4 rgba = imageLoad(srcRGBA, gid);
+    vec3 c = rgba.rgb;
+    float y = rgb_to_y(c);
+    imageStore(dstY, gid, vec4(y, 0.0, 0.0, 1.0));
+
+    // UV per 2x2 block: write one UV sample per chroma pixel
+    if ((gid.x % 2 == 0) && (gid.y % 2 == 0)) {
+        // average 2x2 block
+        ivec2 b = gid;
+        vec3 c0 = imageLoad(srcRGBA, b).rgb;
+        vec3 c1 = imageLoad(srcRGBA, b + ivec2(1,0)).rgb;
+        vec3 c2 = imageLoad(srcRGBA, b + ivec2(0,1)).rgb;
+        vec3 c3 = imageLoad(srcRGBA, b + ivec2(1,1)).rgb;
+        vec3 avg = (c0 + c1 + c2 + c3) * 0.25;
+        vec2 uv = rgb_to_uv(avg);
+        imageStore(dstUV, gid / 2, vec4(uv, 0.0, 1.0));
+    }
+}

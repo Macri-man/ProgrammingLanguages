@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(VulkanTriangle)
+project(VulkanCreation)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -33,7 +33,7 @@ set(BUILD_TESTS OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(vulkan_loader)
 
 # === SPVShaders ===
-file(GLOB SHADERS "shaders/*.vert" "shaders/*.frag")
+file(GLOB SHADERS "shaders/*.comp")
 file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/shaders.spv")
 
 foreach(SHADER ${SHADERS})
@@ -47,7 +47,7 @@ foreach(SHADER ${SHADERS})
 endforeach()
 
 # === Executable ===
-add_executable(VulkanTriangle main.cpp ${SPV_SHADERS})
+add_executable(VulkanCreation main.cpp ${SPV_SHADERS})
 
 # === Include and Link ===
-target_link_libraries(VulkanTriangle PRIVATE glfw)
+target_link_libraries(VulkanCreation PRIVATE glfw)
